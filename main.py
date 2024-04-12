@@ -10,7 +10,7 @@ import argparse
 #*******************************************************************************
 
 class Learning():
-    def __init__(self, args, max_episodes=300, LearningRate=0.001, gamma=0.99, epsilon=0.9, render_mode="human"):
+    def __init__(self, args, render_mode="human"):
         self.max_episodes = max_episodes #100 #300
         self.Env = gym.make("LunarLander-v2", render_mode="human")
 
@@ -54,5 +54,7 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
     print(args)
+
+
     print("poep")
     Learn = Learning(args)
