@@ -8,7 +8,7 @@ def Algorithm(nrEpisodes):
 	for i in range(nrEpisodes):
 		progress_bar(i+1, nrEpisodes) 
 		reward_per_episodes.append(random.randint(0, 10))
-		time.sleep(0.02)
+		time.sleep(0.005)
 	return reward_per_episodes
 #*******************************************************************************
 def progress_bar(current, total, bar_length=20):

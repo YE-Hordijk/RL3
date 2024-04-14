@@ -21,6 +21,9 @@ def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=N
 
 	# Save average and std_dev in nupy array
 	#np.savez(f'{nameResults}.npz', array1=average_array, array2=std_dev_array) # save results separate but in one zip
+	
+	print(average_array)
+	print(std_dev_array)
 	combinedResults = np.vstack((average_array, std_dev_array))
 	np.save(f'{nameResults}', combinedResults) # save the results containing both average and stdev in one file
 #*******************************************************************************
