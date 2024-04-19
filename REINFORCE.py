@@ -46,7 +46,23 @@ class Policy_Net(nn.Module):
         
 class REINFORCE():
     def __init__(self):
-        self.
-    def initialize_p
-    def Reinforce_Learn():
+        self.env = gym.make("LunarLander-v2", render_mode="human")
+        self.max_episodes = 300
+        
+    def update_policy():
+        
+    def Reinforce_Learn(pi, theta, eta):
+    #initialize theta
+    for episode in range(self.max_episodes):
+        state = env.reset()
+        grad = 0
+        for m in range(M)
+            sample trace h_0{s_0,a_0,r_0,s_1,...,s_n+1} according to policy pi(a|s)
+            R = 0
+            for t in reversed(range(n))
+                R = r_t + self.gamma * R
+                #rho = entropy ding
+                grad += R * rho * log * pi(a_t|s_t)
+        theta = theta + eta * grad
+    return pi
     

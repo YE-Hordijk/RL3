@@ -11,7 +11,7 @@ import argparse
 
 class Learning():
     def __init__(self, args, render_mode="human"):
-        self.max_episodes = max_episodes #100 #300
+        self.max_episodes = 100 #300
         self.Env = gym.make("LunarLander-v2", render_mode="human")
 
 
