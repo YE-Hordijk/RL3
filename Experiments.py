@@ -30,8 +30,8 @@ def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=N
 
 
 params = {'nrEpisodes': 100}
-RunExperiment(RF, "testFile_RF", repetition_count=20, params=params) # Do experiments for REINFORCE
-RunExperiment(AC, "testFile_AC", repetition_count=20, params=params) # Do experiments for Actor Critic
+RunExperiment(RF, "rf.npy", repetition_count=20, params=params) # Do experiments for REINFORCE
+RunExperiment(AC, "ac.npy", repetition_count=20, params=params) # Do experiments for Actor Critic
 
 
 
