@@ -1,4 +1,6 @@
-reinforce = np.load("reinforce.npy")
+import numpy as np
+
+reinforce = np.load("rf.npy")
 ac = np.load("ac.npy")
 # reinforce = [np.load(f"reinforce{i}.npy") for i in range(10)]
 # ac = [np.load(f"ac{i}.npy") for i in range(10)]
