@@ -54,7 +54,8 @@ if __name__ == '__main__':
 
     args = vars(parser.parse_args())
     print(args)
-
+    r = R.REINFORCE()
+    r.Reinforce_Learn()
 
     print("poep")
-    Learn = Learning(args)
+    #Learn = Learning(args)
