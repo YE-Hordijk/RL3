@@ -37,68 +37,86 @@ from torch.distributions import Categorical
 class Policy_Net(nn.Module):
     def __init__(self):
         super(Policy_Net, self).__init__()
-        self.layer1 = nn.Linear(8, 16)
-        self.layer2 = nn.Linear(16, 16)
-        self.layer3 = nn.Linear(16, 4)
+        self.layer1 = nn.Linear(8, 32)
+        self.layer2 = nn.Linear(32, 32)
+        self.layer3 = nn.Linear(32, 4)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         x = self.layer3(x)
-        x = nn.functional.softmax(x, dim=1)
+        x = nn.functional.softmax(x.to(torch.float64), dim=1)#.to(torch.float64)
         return x
         
 class REINFORCE():
     def __init__(self):
-        self.env = gym.make("LunarLander-v2", render_mode="human")
-        self.max_episodes = 10
+        self.env = gym.make("LunarLander-v2")#, render_mode="human")
+        self.max_episodes = 250
         self.gamma = 0.99
         self.LearningRate = 0.001
         self.PolicyNet = Policy_Net()
         self.optimizer = optim.AdamW(self.PolicyNet.parameters(), lr=self.LearningRate, amsgrad=True)
+        self.rewards = []
+        self.losses = []
         
     def select_action(self, state):
         #dit misschien nog anders doen?
-        state = torch.from_numpy(state).float().unsqueeze(0)
+        state = torch.from_numpy(state).unsqueeze(0)
         action_probs = self.PolicyNet(state).squeeze()
-        log_probs = torch.log(action_probs)
+        print(action_probs)
+        log_prob = torch.log(action_probs)
+        entropy = (- action_probs * torch.log(action_probs)).sum()
         cpu_action_probs = action_probs.detach().cpu().numpy()
         action = np.random.choice(np.arange(4), p=cpu_action_probs)
-        return action
+        return action, log_prob, entropy
         
     #def update_parameters():
-        
+    
     def Reinforce_Learn(self):#(pi, theta, eta):
     #initialize theta
-        done = False
-        count = 0
-        while not done:
+        for m in range(self.max_episodes):
             state, info = self.env.reset()
-            grad = 0
             totalreward = 0
             state_t = []
             reward_t = []
-            for m in range(self.max_episodes):
-                count += 1
-                action = self.select_action(state)
+            log_probs = []
+            entropies = []
+            terminated, truncated = [False, False]
+            print("ep", m)
+            while not (terminated or truncated):
+                grad = 0
+                action, log_prob, entropy = self.select_action(state)
                 #sample trace h_0{s_0,a_0,r_0,s_1,...,s_n+1} according to policy pi(a|s)
                 state_t.append(torch.from_numpy(state).float().unsqueeze(0))
                 next_state, reward, terminated, truncated, info = self.env.step(action)
+                #print("rsg", terminated, truncated)
                 totalreward += reward
+                #print("tr", totalreward)
                 reward_t.append(reward)
-                R = 0
-                for t in reversed(range(count)):
-                    R = reward_t[t] + self.gamma * R
-                    print("R", R)
-                    #rho = entropy ding
-                    action_probs = self.PolicyNet(state_t[t]).squeeze()
-                    entropy = ()
-                    grad += R * torch.log(self.PolicyNet(state_t[t]).squeeze()) #*rho
-                    print("grad", grad)
-            #theta = theta + eta * grad
+                log_probs.append(log_prob)
+                entropies.append(entropy)
+                #print(reward_t)
+                
                 state = next_state
-            done = True
-        return pi
+                if (terminated or truncated):
+                    self.rewards.append(totalreward)
+                    print("ended1")
+                    break
+            R = torch.zeros(1)
+            for t in reversed(range(len(reward_t))):
+                R = reward_t[t] + self.gamma * R
+                grad = grad - (log_probs[t]*(Variable(R).expand_as(log_probs[t]))).sum()# - (self.LearningRate*entropies[t]).sum()
+        #theta = theta + eta * grad
+            grad = grad / len(reward_t)
+            self.optimizer.zero_grad()
+            #grad = torch.cat(grad).sum()
+            grad.backward() # compute the gradients
+            torch.nn.utils.clip_grad_value_(self.PolicyNet.parameters(), 40) # clip gradients to avoid exploding gradients
+            self.optimizer.step()
+            print("end of for")
+        return self.rewards
 
 
-    
+
+
+
