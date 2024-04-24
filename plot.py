@@ -7,10 +7,10 @@ ac = np.load("ac.npy")
 # ac = [np.load(f"ac{i}.npy") for i in range(10)]
 plt.rcParams.update({'font.size': 22})
 
-r_avg = np.mean(reinforce, axis=1)
-r_std = np.std(reinfoce, axis=1)
-ac_avg = np.mean(ac, axis=1)
-ac_std = np.std(ac, axis=1)
+r_avg = reinforce[0]
+r_std = reinforce[1]
+ac_avg = ac[0]
+ac_std = ac[1]
 
 plt.figure(1, figsize=(10,7))
 plt.plot(range(len(r_avg)), r_avg, color="#FF0000", label="REINFORCE reward")
