@@ -37,9 +37,9 @@ from torch.distributions import Categorical
 class Policy_Net(nn.Module):
     def __init__(self):
         super(Policy_Net, self).__init__()
-        self.layer1 = nn.Linear(8, 32)
-        self.layer2 = nn.Linear(32, 32)
-        self.layer3 = nn.Linear(32, 4)
+        self.layer1 = nn.Linear(8, 16)
+        self.layer2 = nn.Linear(16, 16)
+        self.layer3 = nn.Linear(16, 4)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
@@ -111,7 +111,7 @@ class REINFORCE():
             self.optimizer.zero_grad()
             #grad = torch.cat(grad).sum()
             grad.backward() # compute the gradients
-            torch.nn.utils.clip_grad_value_(self.PolicyNet.parameters(), 40) # clip gradients to avoid exploding gradients
+            #torch.nn.utils.clip_grad_value_(self.PolicyNet.parameters(), 40) # clip gradients to avoid exploding gradients
             self.optimizer.step()
             print("end of for")
         return self.rewards
