@@ -2,6 +2,7 @@ reinforce = np.load("reinforce.npy")
 ac = np.load("ac.npy")
 # reinforce = [np.load(f"reinforce{i}.npy") for i in range(10)]
 # ac = [np.load(f"ac{i}.npy") for i in range(10)]
+plt.rcParams.update({'font.size': 22})
 
 r_avg = np.mean(reinforce, axis=1)
 r_std = np.std(reinfoce, axis=1)
