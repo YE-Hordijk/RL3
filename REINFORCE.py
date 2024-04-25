@@ -51,7 +51,7 @@ class Policy_Net(nn.Module):
 class REINFORCE():
     def __init__(self):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
-        self.max_episodes = 250
+        self.max_episodes = 500
         self.gamma = 0.99
         self.LearningRate = 0.001
         self.PolicyNet = Policy_Net()
@@ -60,7 +60,6 @@ class REINFORCE():
         self.losses = []
         
     def select_action(self, state):
-        #dit misschien nog anders doen?
         state = torch.from_numpy(state).unsqueeze(0)
         action_probs = self.PolicyNet(state).squeeze()
         print(action_probs)
@@ -69,11 +68,8 @@ class REINFORCE():
         cpu_action_probs = action_probs.detach().cpu().numpy()
         action = np.random.choice(np.arange(4), p=cpu_action_probs)
         return action, log_prob, entropy
-        
-    #def update_parameters():
     
-    def Reinforce_Learn(self):#(pi, theta, eta):
-    #initialize theta
+    def Reinforce_Learn(self):
         for m in range(self.max_episodes):
             state, info = self.env.reset()
             totalreward = 0
@@ -100,23 +96,22 @@ class REINFORCE():
                 state = next_state
                 if (terminated or truncated):
                     self.rewards.append(totalreward)
-                    print("ended1")
                     break
             R = torch.zeros(1)
             for t in reversed(range(len(reward_t))):
                 R = reward_t[t] + self.gamma * R
                 grad = grad - (log_probs[t]*(Variable(R).expand_as(log_probs[t]))).sum()# - (self.LearningRate*entropies[t]).sum()
-        #theta = theta + eta * grad
             grad = grad / len(reward_t)
             self.optimizer.zero_grad()
             #grad = torch.cat(grad).sum()
             grad.backward() # compute the gradients
             #torch.nn.utils.clip_grad_value_(self.PolicyNet.parameters(), 40) # clip gradients to avoid exploding gradients
             self.optimizer.step()
-            print("end of for")
         return self.rewards
 
 
 
 
-
+r = REINFORCE() # initialize the models
+policy = r.Reinforce_Learn()
+print("end", policy)

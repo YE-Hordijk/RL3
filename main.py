@@ -58,7 +58,6 @@ if __name__ == '__main__':
     print(args)
 
 
-    print("poep")
     r = R.REINFORCE() # initialize the models
     policy = r.Reinforce_Learn()
     print("end", policy)
