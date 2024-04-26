@@ -3,19 +3,21 @@ import ActorCritic as AC
 import gymnasium as gym
 import argparse
 
+import matplotlib
+import matplotlib.pyplot as plt
 #import Environment as Env
 #observation = Env.env.reset()
 
 
-#*******************************************************************************
+#***************************
 
 class Learning():
-    def __init__(self, args, render_mode="human"):
+    def _init_(self, args, render_mode="human"):
         self.max_episodes = 100 #300
         self.Env = gym.make("LunarLander-v2", render_mode="human")
 
 
-#*******************************************************************************
+#***************************
     '''
     def Reinforce_Learn(pi, theta, eta):
         initialize theta
@@ -30,7 +32,7 @@ class Learning():
             theta <- theta + eta * grad
         return pi
     '''
-#*******************************************************************************
+#***************************
     '''
     def ActorCritic_Learn(pi, V_phi, n, eta, M): \\maybe met bootstrapping
         initialize theta, phi
@@ -44,7 +46,7 @@ class Learning():
             phi = phi - eta * rho som(Q(s,a)-V_phi(s_t)^2)
         return pi
     '''
-#*******************************************************************************
+#***************************
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -56,8 +58,12 @@ if __name__ == '__main__':
     print(args)
 
 
-    print("poep")
-    Learn = Learning(args)
-
-
-
+    r = R.REINFORCE() # initialize the models
+    policy = r.Reinforce_Learn()
+    print("end", policy)
+    
+    plt.plot(range(len(policy)), policy)
+    plt.xlabel("Episode")
+    plt.ylabel("Timestep")
+    plt.show()
+    plt.savefig("test.png")

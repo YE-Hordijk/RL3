@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import savgol_filter
 from matplotlib import pyplot as plt
 
 reinforce = np.load("rf.npy")
@@ -7,12 +8,9 @@ ac = np.load("ac.npy")
 # ac = [np.load(f"ac{i}.npy") for i in range(10)]
 plt.rcParams.update({'font.size': 22})
 
-r_avg = reinforce[0]
-print(reinforce[2])
-print(r_avg)
-exit()
+r_avg = savgol_filter(reinforce[0], 15, 1)
 r_std = reinforce[1]
-ac_avg = ac[0]
+ac_avg = savgol_filter(ac[0], 15, 1)
 ac_std = ac[1]
 
 plt.figure(1, figsize=(10,7))
