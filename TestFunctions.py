@@ -3,11 +3,14 @@ import time
 import sys
 
 #*******************************************************************************
-def Algorithm(nrEpisodes):
+def Algorithm(nrEpisodes, interval):
 	reward_per_episodes = []
-	for i in range(nrEpisodes):
-		progress_bar(i+1, nrEpisodes) 
-		reward_per_episodes.append(random.randint(0, 10))
+	i = 0
+	for ep in range(nrEpisodes):
+		if i%interval==0: reward_per_episodes.append(random.randint(0, 10))
+		i+=1
+
+		progress_bar(ep+1, nrEpisodes) 
 		time.sleep(0.005)
 	return reward_per_episodes
 #*******************************************************************************

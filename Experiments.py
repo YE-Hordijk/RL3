@@ -11,6 +11,7 @@ import TestFunctions as AC # ActorCritic # TODO Vervangen door echte file
 #*******************************************************************************
 def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=None):
 	multi_results = []
+
 	for i in range(repetition_count):
 		print(f"\033[42mRepetition {i+1}\033[0m", end='\n')
 		# l = Learning(render_mode="rgb_array", **params) # initialize learning parameters # TODO Classe aanroepen die parameters initializeerd
@@ -25,13 +26,17 @@ def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=N
 	print(average_array)
 	print(std_dev_array)
 	combinedResults = np.vstack((average_array, std_dev_array))
-	np.save(f'{nameResults}', combinedResults) # save the results containing both average and stdev in one file
+	np.save(f'{nameResults}_{params['interval']}.npy', combinedResults)) # save the results containing both average and stdev in one file
+
+	#np.save(f'{nameResults}', np.array([average_array, std_dev_array, params['interval']])) # save the results containing both average and stdev in one file
 #*******************************************************************************
 
 
-params = {'nrEpisodes': 100}
-RunExperiment(RF, "rf.npy", repetition_count=20, params=params) # Do experiments for REINFORCE
-RunExperiment(AC, "ac.npy", repetition_count=20, params=params) # Do experiments for Actor Critic
+params = {'nrEpisodes': 100,
+					'interval': 10
+				 }
+RunExperiment(RF, "rf", repetition_count=5, params=params) # Do experiments for REINFORCE
+RunExperiment(AC, "ac", repetition_count=5, params=params) # Do experiments for Actor Critic
 
 
 
