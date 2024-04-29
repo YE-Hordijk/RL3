@@ -23,7 +23,7 @@ class Policy_Net(nn.Module):
     def __init__(self, state_dim):
         super(Policy_Net, self).__init__()
         self.common = nn.Sequential(
-            nn.Linear(8, 128),
+            nn.Linear(state_dim, 128),
             nn.ReLU()
         )
         self.actor = nn.Linear(128, 4)
@@ -75,19 +75,20 @@ class ActorCritic():
 
             self.rewards.append(ep_reward)
 
-            # TODO: dit begrijpen
             returns = []
             advantage = 0
             for r in rewards[::-1]:
+                # go through rewards in reverse direction, to use the correct value for advantage
                 advantage = r + self.discount * advantage
                 returns.insert(0, advantage)
+            # TODO: dit begrijpen
             returns = torch.tensor(returns)
             log_probs = torch.cat(log_probs)
             values = torch.cat(values)
 
             # compute actor and critic losses
             actor_loss = -(log_probs * (returns - values.detach())).mean()
-            critic_loss = nn.functional.mse_loss(values, returns)
+            critic_loss = nn.functional.mse_loss(values.squeeze(), returns)
             total_loss = actor_loss + critic_loss
 
             # Optimize
