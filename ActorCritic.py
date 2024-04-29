@@ -73,7 +73,7 @@ class ActorCritic():
                 rewards.append(reward)
                 state = next_state
 
-            self.rewards.push(ep_reward)
+            self.rewards.append(ep_reward)
 
             # TODO: dit begrijpen
             returns = []
