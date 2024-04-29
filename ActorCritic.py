@@ -82,7 +82,7 @@ class ActorCritic():
                 advantage = r + self.discount * advantage
                 returns.insert(0, advantage)
             # TODO: dit begrijpen
-            returns = torch.tensor(returns)
+            returns = torch.tensor(returns, dtype=torch.float32)
             log_probs = torch.cat(log_probs)
             values = torch.cat(values).squeeze()
 
@@ -94,13 +94,12 @@ class ActorCritic():
             # Optimize
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
-            print(total_loss, returns, values)
             total_loss.backward()
-            actor_optimizer.step()
-            critic_optimizer.step()
+            self.actor_optimizer.step()
+            self.critic_optimizer.step()
 
             if episode % 100 == 0:
-                print(f"Episode: {episode}, Total Reward: {episode_reward}")
+                print(f"Episode: {episode}, Total Reward: {ep_reward}")
 
         return self.rewards
 
