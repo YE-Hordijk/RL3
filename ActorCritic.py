@@ -45,7 +45,8 @@ class ActorCritic():
         self.actor_lr = 0.0001
         self.critic_lr = 0.0005
 
-        self.model = Policy_Net(self.state_dim)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = Policy_Net(self.state_dim).to(self.device)
         self.actor_optimizer = optim.Adam(self.model.parameters(), lr=self.actor_lr)
         self.critic_optimizer = optim.Adam(self.model.parameters(), lr=self.critic_lr)
 
@@ -61,7 +62,7 @@ class ActorCritic():
             terminated = truncated = False
 
             while not (terminated or truncated):
-                state_tensor = torch.from_numpy(state).unsqueeze(0)
+                state_tensor = torch.from_numpy(state).unsqueeze(0).to(self.device)
                 action_probs, value = self.model(state_tensor)
                 m = Categorical(action_probs) # TODO: nieuw
                 action = m.sample() # TODO: nieuw
@@ -83,7 +84,7 @@ class ActorCritic():
                 advantage = r + self.discount * advantage
                 returns.insert(0, advantage)
             # TODO: dit begrijpen
-            returns = torch.tensor(returns, dtype=torch.float32)
+            returns = torch.tensor(returns, dtype=torch.float32).to(self.device)
             log_probs = torch.cat(log_probs)
             values = torch.cat(values).squeeze()
 
@@ -100,7 +101,7 @@ class ActorCritic():
             self.critic_optimizer.step()
 
             if episode % 100 == 0 or self.render_mode == 'human':
-                print(f"Episode: {episode}, Total Reward: {ep_reward}")
+                print(f"Episode: {episode}, Total Reward: {ep_reward}, Average: {np.mean(self.rewards[-100:])}")
 
         return self.rewards
 
