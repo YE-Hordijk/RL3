@@ -1,18 +1,3 @@
-# Johan
-'''
-def Reinforce_Learn(pi, theta, eta):
-    initialize theta
-    while not converged:
-        grad = 0
-        for m in range(M)
-            sample trace h_0{s_0,a_0,r_0,s_1,...,s_n+1} according to policy pi(a|s)
-            R = 0
-            for t in reversed(range(n))
-                R = r_t + self.gamma * R
-                grad += R* rho log pi(a_t|s_t)
-        theta <- theta + eta * grad
-    return pi
-'''
 import gymnasium as gym
 import math
 import random
@@ -35,74 +20,83 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 class Policy_Net(nn.Module):
-    def __init__(self):
+    def __init__(self, state_dim):
         super(Policy_Net, self).__init__()
-        self.layer1 = nn.Linear(8, 16)
-        self.layer2 = nn.Linear(16, 16)
-        self.layer3 = nn.Linear(16, 4)
+        self.common = nn.Sequential(
+            nn.Linear(8, 128),
+            nn.ReLU()
+        )
+        self.actor = nn.Linear(128, 4)
+        self.critic = nn.Linear(128, 1)
 
-    def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        x = self.layer3(x)
-        x = nn.functional.softmax(x.to(torch.float64), dim=1)#.to(torch.float64)
-        value = 1
-        return x, value # TODO: geef value
+    def forward(self, state):
+        x = self.common(state)
+        policy = nn.functional.softmax(self.actor(x), dim=-1)
+        value = self.critic(x)
+        return policy, value
 
 class ActorCritic():
     def __init__(self):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
+        self.state_dim = self.env.observation_space.shape[0]
         self.max_episodes = 1000
         self.discount = 0.99
         self.actor_lr = 0.001
         self.critic_lr = 0.005
+
+        self.model = Policy_Net(self.state_dim)
+        self.actor_optimizer = optim.Adam(self.model.parameters(), lr=self.actor_lr)
+        self.critic_optimizer = optim.Adam(self.model.parameters(), lr=self.critic_lr)
     
     def learn(self):
-        state, info = self.env.reset()
-        e_reward = 0
-        log_probs = []
-        values = []
-        rewards = []
-        terminated = truncated = false
+        for episode in range(self.max_episodes):
+            state, info = self.env.reset()
+            e_reward = 0
+            log_probs = []
+            values = []
+            rewards = []
+            terminated = truncated = false
 
-        while not (terminated or truncated):
-            state_tensor = torch.from_numpy(state).unsqueeze(0)
-            action_probs, value = self.PolicyNet(state).squeeze()
-            m = Categorical(action_probs) # TODO: nieuw
-            action = m.sample() # TODO: nieuw
-            log_prob = m.log_prob(action)
-            next_state, reward, truncated, info = self.env.step(action.item())
-            e_reward += reward
+            while not (terminated or truncated):
+                state_tensor = torch.from_numpy(state).unsqueeze(0)
+                action_probs, value = self.model(state_tensor).squeeze()
+                m = Categorical(action_probs) # TODO: nieuw
+                action = m.sample() # TODO: nieuw
+                log_prob = m.log_prob(action)
+                next_state, reward, truncated, info = self.env.step(action.item())
+                e_reward += reward
 
-            log_probs.append(log_prob)
-            values.append(value)
-            rewards.append(reward)
-            state = next_state
-        
-        # TODO: dit begrijpen
-        returns = []
-        advantage = 0
-        for r in rewards[::-1]:
-            advantage = r + discount_factor * advantage
-            returns.insert(0, advantage)
-        returns = torch.tensor(returns)
-        log_probs = torch.cat(log_probs)
-        values = torch.cat(values)
+                log_probs.append(log_prob)
+                values.append(value)
+                rewards.append(reward)
+                state = next_state
+            
+            # TODO: dit begrijpen
+            returns = []
+            advantage = 0
+            for r in rewards[::-1]:
+                advantage = r + discount_factor * advantage
+                returns.insert(0, advantage)
+            returns = torch.tensor(returns)
+            log_probs = torch.cat(log_probs)
+            values = torch.cat(values)
 
-        # compute actor and critic losses
-        actor_loss = -(log_probs * (returns - values.detach())).mean()
-        critic_loss = nn.functional.mse_loss(values, returns)
-        total_loss = actor_loss + critic_loss
+            # compute actor and critic losses
+            actor_loss = -(log_probs * (returns - values.detach())).mean()
+            critic_loss = nn.functional.mse_loss(values, returns)
+            total_loss = actor_loss + critic_loss
 
-        # Optimize
-        actor_optimizer.zero_grad()
-        critic_optimizer.zero_grad()
-        total_loss.backward()
-        actor_optimizer.step()
-        critic_optimizer.step()
+            # Optimize
+            actor_optimizer.zero_grad()
+            critic_optimizer.zero_grad()
+            total_loss.backward()
+            actor_optimizer.step()
+            critic_optimizer.step()
 
-        if episode % 100 == 0:
-            print(f"Episode: {episode}, Total Reward: {episode_reward}")
+            if episode % 100 == 0:
+                print(f"Episode: {episode}, Total Reward: {episode_reward}")
+
+        #TODO: Return values
         
 class REINFORCE():
     def __init__(self):
@@ -168,6 +162,6 @@ class REINFORCE():
 
 
 
-r = REINFORCE() # initialize the models
-policy = r.Reinforce_Learn()
+ac = ActorCritic()
+policy = ac.learn()
 print("end", policy)
