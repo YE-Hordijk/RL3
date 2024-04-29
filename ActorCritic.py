@@ -36,13 +36,14 @@ class Policy_Net(nn.Module):
         return policy, value
 
 class ActorCritic():
-    def __init__(self):
-        self.env = gym.make("LunarLander-v2")#, render_mode="human")
+    def __init__(self, render_mode=None):
+        self.env = gym.make("LunarLander-v2", render_mode="human")
+        self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
         self.max_episodes = 1000
         self.discount = 0.99
-        self.actor_lr = 0.001
-        self.critic_lr = 0.005
+        self.actor_lr = 0.0001
+        self.critic_lr = 0.0005
 
         self.model = Policy_Net(self.state_dim)
         self.actor_optimizer = optim.Adam(self.model.parameters(), lr=self.actor_lr)
@@ -98,12 +99,15 @@ class ActorCritic():
             self.actor_optimizer.step()
             self.critic_optimizer.step()
 
-            if episode % 100 == 0:
+            if episode % 100 == 0 or self.render_mode == 'human':
                 print(f"Episode: {episode}, Total Reward: {ep_reward}")
 
         return self.rewards
 
 if __name__ == "__main__":
-    ac = ActorCritic()
+    if 1:
+        ac = ActorCritic("human")
+    else:
+        ac = ActorCritic()
     policy = ac.learn()
     print("end", policy)
