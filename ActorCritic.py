@@ -57,15 +57,15 @@ class ActorCritic():
             log_probs = []
             values = []
             rewards = []
-            terminated = truncated = false
+            terminated = truncated = False
 
             while not (terminated or truncated):
                 state_tensor = torch.from_numpy(state).unsqueeze(0)
-                action_probs, value = self.model(state_tensor).squeeze()
+                action_probs, value = self.model(state_tensor)
                 m = Categorical(action_probs) # TODO: nieuw
                 action = m.sample() # TODO: nieuw
                 log_prob = m.log_prob(action)
-                next_state, reward, truncated, info = self.env.step(action.item())
+                next_state, reward, terminated, truncated, info = self.env.step(action.item())
                 ep_reward += reward
 
                 log_probs.append(log_prob)
@@ -79,7 +79,7 @@ class ActorCritic():
             returns = []
             advantage = 0
             for r in rewards[::-1]:
-                advantage = r + discount_factor * advantage
+                advantage = r + self.discount * advantage
                 returns.insert(0, advantage)
             returns = torch.tensor(returns)
             log_probs = torch.cat(log_probs)
@@ -91,8 +91,8 @@ class ActorCritic():
             total_loss = actor_loss + critic_loss
 
             # Optimize
-            actor_optimizer.zero_grad()
-            critic_optimizer.zero_grad()
+            self.actor_optimizer.zero_grad()
+            self.critic_optimizer.zero_grad()
             total_loss.backward()
             actor_optimizer.step()
             critic_optimizer.step()
@@ -102,6 +102,7 @@ class ActorCritic():
 
         return self.rewards
 
-ac = ActorCritic()
-policy = ac.learn()
-print("end", policy)
+if __name__ == "__main__":
+    ac = ActorCritic()
+    policy = ac.learn()
+    print("end", policy)
