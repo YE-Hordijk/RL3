@@ -84,16 +84,17 @@ class ActorCritic():
             # TODO: dit begrijpen
             returns = torch.tensor(returns)
             log_probs = torch.cat(log_probs)
-            values = torch.cat(values)
+            values = torch.cat(values).squeeze()
 
             # compute actor and critic losses
             actor_loss = -(log_probs * (returns - values.detach())).mean()
-            critic_loss = nn.functional.mse_loss(values.squeeze(), returns)
+            critic_loss = nn.functional.mse_loss(values, returns)
             total_loss = actor_loss + critic_loss
 
             # Optimize
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
+            print(total_loss, returns, values)
             total_loss.backward()
             actor_optimizer.step()
             critic_optimizer.step()
