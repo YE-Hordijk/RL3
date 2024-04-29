@@ -26,15 +26,17 @@ def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=N
 	print(average_array)
 	print(std_dev_array)
 	combinedResults = np.vstack((average_array, std_dev_array))
-	np.save(f'{nameResults}_{params['interval']}.npy', combinedResults)) # save the results containing both average and stdev in one file
+
+	np.save(f"{nameResults}_{params['interval']}.npy", combinedResults) # save the results containing both average and stdev in one file
 
 	#np.save(f'{nameResults}', np.array([average_array, std_dev_array, params['interval']])) # save the results containing both average and stdev in one file
 #*******************************************************************************
 
 
 params = {'nrEpisodes': 100,
-					'interval': 10
-				 }
+		  'interval': 10,
+		  'nrTestEpisodes': 5,
+		 }
 RunExperiment(RF, "rf", repetition_count=5, params=params) # Do experiments for REINFORCE
 RunExperiment(AC, "ac", repetition_count=5, params=params) # Do experiments for Actor Critic
 
