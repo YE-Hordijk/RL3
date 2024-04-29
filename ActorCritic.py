@@ -24,6 +24,7 @@ class Policy_Net(nn.Module):
         super(Policy_Net, self).__init__()
         self.common = nn.Sequential(
             nn.Linear(state_dim, 128),
+            nn.Dropout(0.10),
             nn.ReLU()
         )
         self.actor = nn.Linear(128, 4)
