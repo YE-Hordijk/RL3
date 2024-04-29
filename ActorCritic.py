@@ -47,11 +47,13 @@ class ActorCritic():
         self.model = Policy_Net(self.state_dim)
         self.actor_optimizer = optim.Adam(self.model.parameters(), lr=self.actor_lr)
         self.critic_optimizer = optim.Adam(self.model.parameters(), lr=self.critic_lr)
+
+        self.rewards = []
     
     def learn(self):
         for episode in range(self.max_episodes):
             state, info = self.env.reset()
-            e_reward = 0
+            ep_reward = 0
             log_probs = []
             values = []
             rewards = []
@@ -64,13 +66,15 @@ class ActorCritic():
                 action = m.sample() # TODO: nieuw
                 log_prob = m.log_prob(action)
                 next_state, reward, truncated, info = self.env.step(action.item())
-                e_reward += reward
+                ep_reward += reward
 
                 log_probs.append(log_prob)
                 values.append(value)
                 rewards.append(reward)
                 state = next_state
-            
+
+            self.rewards.push(ep_reward)
+
             # TODO: dit begrijpen
             returns = []
             advantage = 0
@@ -96,7 +100,7 @@ class ActorCritic():
             if episode % 100 == 0:
                 print(f"Episode: {episode}, Total Reward: {episode_reward}")
 
-        #TODO: Return values
+        return self.rewards
 
 ac = ActorCritic()
 policy = ac.learn()
