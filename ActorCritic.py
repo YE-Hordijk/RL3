@@ -37,7 +37,7 @@ class Policy_Net(nn.Module):
 
 class ActorCritic():
     def __init__(self, render_mode=None):
-        self.env = gym.make("LunarLander-v2", render_mode="human")
+        self.env = gym.make("LunarLander-v2", render_mode=render_mode)
         self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
         self.max_episodes = 1000
@@ -105,7 +105,7 @@ class ActorCritic():
         return self.rewards
 
 if __name__ == "__main__":
-    if 1:
+    if 0:
         ac = ActorCritic("human")
     else:
         ac = ActorCritic()
