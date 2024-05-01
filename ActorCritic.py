@@ -46,7 +46,7 @@ class CriticNet(nn.Module):
         return self.critic(state)
 
 class ActorCritic():
-    def __init__(self, render_mode=None, bootstrapping=False, baseline_subtraction=False):
+    def __init__(self, render_mode=None, bootstrapping=True, baseline_subtraction=True):
         self.env = gym.make("LunarLander-v2", render_mode=render_mode)
         self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
@@ -55,6 +55,9 @@ class ActorCritic():
         self.actor_lr = 0.0001
         self.critic_lr = 0.0005
         self.n_step = 5
+
+        self.bootstrapping = bootstrapping
+        self.baseline_subtraction = baseline_subtraction
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor_model = ActorNet(self.state_dim).to(self.device)
