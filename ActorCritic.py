@@ -46,15 +46,15 @@ class CriticNet(nn.Module):
         return self.critic(state)
 
 class ActorCritic():
-    def __init__(self, render_mode=None, bootstrapping=True, baseline_subtraction=True):
+    def __init__(self, render_mode=None, bootstrapping=True, baseline_subtraction=True, steps=5):
         self.env = gym.make("LunarLander-v2", render_mode=render_mode)
         self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
-        self.max_episodes = 3000
-        self.discount = 0.99
+        self.max_episodes = 3001
+        self.gamma = 0.99
         self.actor_lr = 0.0001
         self.critic_lr = 0.0005
-        self.n_step = 5
+        self.n_step = steps
 
         self.bootstrapping = bootstrapping
         self.baseline_subtraction = baseline_subtraction
@@ -94,11 +94,21 @@ class ActorCritic():
             self.rewards.append(ep_reward)
 
             returns = []
-            advantage = 0
-            for r in rewards[::-1]:
-                # go through rewards in reverse direction, to use the correct value for advantage
-                advantage = r + self.discount * advantage
-                returns.insert(0, advantage)
+            if self.bootstrapping:
+                n_return = 0
+                for i in range(len(rewards)-1, -1, -1):
+                    r = rewards[i]
+                    for j in range(self.n_step):
+                        if i + j < len(rewards):
+                            n_return = r + self.gamma * n_return
+                            r *= self.gamma
+                    returns.insert(0, n_return)
+            else:
+                advantage = 0
+                for r in rewards[::-1]:
+                    # go through rewards in reverse direction, to use the correct value for advantage
+                    advantage = r + self.gamma * advantage
+                    returns.insert(0, advantage)
 
             returns = torch.tensor(returns, dtype=torch.float32).to(self.device)
             log_probs = torch.cat(log_probs)
@@ -116,7 +126,7 @@ class ActorCritic():
             self.actor_optimizer.step()
             self.critic_optimizer.step()
 
-            if episode % 100 == 0 or self.render_mode == 'human':
+            if episode % 1000 == 0 or self.render_mode == 'human':
                 print(f"Episode: {episode}, Total Reward: {ep_reward}, Average: {np.mean(self.rewards[-100:])}")
 
         return self.rewards
@@ -125,6 +135,9 @@ if __name__ == "__main__":
     if 0:
         ac = ActorCritic("human")
     else:
-        ac = ActorCritic()
+        for i in range(1, 10):
+            print("steps:", i)
+            ac = ActorCritic(steps=i)
+            ac.learn()
     rewards = ac.learn()
     np.save("ac.npy", rewards)
