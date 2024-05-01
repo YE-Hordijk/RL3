@@ -25,7 +25,7 @@ class ActorNet(nn.Module):
         self.actor = nn.Sequential(
             nn.Linear(state_dim, 128),
             nn.Dropout(0.10),
-            nn.ReLU(),
+            nn.PReLU(),
             nn.Linear(128, 4)
         )
 
@@ -38,7 +38,7 @@ class CriticNet(nn.Module):
         self.critic = nn.Sequential(
             nn.Linear(state_dim, 128),
             nn.Dropout(0.10),
-            nn.ReLU(),
+            nn.PReLU(),
             nn.Linear(128, 1)
         )
 
@@ -46,14 +46,15 @@ class CriticNet(nn.Module):
         return self.critic(state)
 
 class ActorCritic():
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, bootstrapping=False, baseline_subtraction=False):
         self.env = gym.make("LunarLander-v2", render_mode=render_mode)
         self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
-        self.max_episodes = 10000
+        self.max_episodes = 3000
         self.discount = 0.99
         self.actor_lr = 0.0001
         self.critic_lr = 0.0005
+        self.n_step = 5
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.actor_model = ActorNet(self.state_dim).to(self.device)
