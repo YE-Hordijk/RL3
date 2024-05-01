@@ -19,37 +19,47 @@ import torch.nn.init as init
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-class Policy_Net(nn.Module):
+class ActorNet(nn.Module):
     def __init__(self, state_dim):
-        super(Policy_Net, self).__init__()
-        self.common = nn.Sequential(
+        super(ActorNet, self).__init__()
+        self.actor = nn.Sequential(
             nn.Linear(state_dim, 128),
             nn.Dropout(0.10),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.Linear(128, 4)
         )
-        self.actor = nn.Linear(128, 4)
-        self.critic = nn.Linear(128, 1)
 
     def forward(self, state):
-        x = self.common(state)
-        policy = nn.functional.softmax(self.actor(x), dim=-1)
-        value = self.critic(x)
-        return policy, value
+        return nn.functional.softmax(self.actor(state), dim=-1)
+
+class CriticNet(nn.Module):
+    def __init__(self, state_dim):
+        super(CriticNet, self).__init__()
+        self.critic = nn.Sequential(
+            nn.Linear(state_dim, 128),
+            nn.Dropout(0.10),
+            nn.ReLU(),
+            nn.Linear(128, 1)
+        )
+
+    def forward(self, state):
+        return self.critic(state)
 
 class ActorCritic():
     def __init__(self, render_mode=None):
         self.env = gym.make("LunarLander-v2", render_mode=render_mode)
         self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
-        self.max_episodes = 1000
+        self.max_episodes = 10000
         self.discount = 0.99
         self.actor_lr = 0.0001
         self.critic_lr = 0.0005
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = Policy_Net(self.state_dim).to(self.device)
-        self.actor_optimizer = optim.Adam(self.model.parameters(), lr=self.actor_lr)
-        self.critic_optimizer = optim.Adam(self.model.parameters(), lr=self.critic_lr)
+        self.actor_model = ActorNet(self.state_dim).to(self.device)
+        self.critic_model = CriticNet(self.state_dim).to(self.device)
+        self.actor_optimizer = optim.Adam(self.actor_model.parameters(), lr=self.actor_lr)
+        self.critic_optimizer = optim.Adam(self.critic_model.parameters(), lr=self.critic_lr)
 
         self.rewards = []
     
@@ -64,9 +74,10 @@ class ActorCritic():
 
             while not (terminated or truncated):
                 state_tensor = torch.from_numpy(state).unsqueeze(0).to(self.device)
-                action_probs, value = self.model(state_tensor)
-                m = Categorical(action_probs) # TODO: nieuw
-                action = m.sample() # TODO: nieuw
+                action_probs = self.actor_model(state_tensor)
+                value = self.critic_model(state_tensor)
+                m = Categorical(action_probs)
+                action = m.sample()
                 log_prob = m.log_prob(action)
                 next_state, reward, terminated, truncated, info = self.env.step(action.item())
                 ep_reward += reward
@@ -84,7 +95,7 @@ class ActorCritic():
                 # go through rewards in reverse direction, to use the correct value for advantage
                 advantage = r + self.discount * advantage
                 returns.insert(0, advantage)
-            # TODO: dit begrijpen
+
             returns = torch.tensor(returns, dtype=torch.float32).to(self.device)
             log_probs = torch.cat(log_probs)
             values = torch.cat(values).squeeze()
@@ -111,5 +122,5 @@ if __name__ == "__main__":
         ac = ActorCritic("human")
     else:
         ac = ActorCritic()
-    policy = ac.learn()
-    print("end", policy)
+    rewards = ac.learn()
+    np.save("ac.npy", rewards)
