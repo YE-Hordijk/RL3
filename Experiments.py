@@ -4,9 +4,8 @@
 
 import numpy as np
 
-import TestFunctions as RF # REINFORCE # TODO Vervangen door echte file
-import TestFunctions as AC # ActorCritic # TODO Vervangen door echte file
-
+import REINFORCE as RF # REINFORCE
+import ActorCritic as AC # ActorCritic
 
 #*******************************************************************************
 def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=None):
@@ -14,8 +13,8 @@ def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=N
 
 	for i in range(repetition_count):
 		print(f"\033[42mRepetition {i+1}\033[0m", end='\n')
-		# l = Learning(render_mode="rgb_array", **params) # initialize learning parameters # TODO Classe aanroepen die parameters initializeerd
-		multi_results.append( ALGO.Algorithm(**params) )
+		# l = Learning(render_mode="rgb_array", **params) # initialize learning parameters
+		multi_results.append( ALGO.experiment(**params) )
 
 	average_array = np.mean(multi_results, axis=0)
 	std_dev_array = np.std(multi_results, axis=0)
@@ -37,7 +36,7 @@ params = {'nrEpisodes': 100,
 		  'interval': 10,
 		  'nrTestEpisodes': 5,
 		 }
-RunExperiment(RF, "rf", repetition_count=5, params=params) # Do experiments for REINFORCE
+# RunExperiment(RF, "rf", repetition_count=5, params=params) # Do experiments for REINFORCE
 RunExperiment(AC, "ac", repetition_count=5, params=params) # Do experiments for Actor Critic
 
 

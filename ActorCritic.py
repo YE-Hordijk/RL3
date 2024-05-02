@@ -46,15 +46,15 @@ class CriticNet(nn.Module):
         return self.critic(state)
 
 class ActorCritic():
-    def __init__(self, render_mode=None, bootstrapping=True, baseline_subtraction=True, steps=5):
+    def __init__(self, episodes=3001, bootstrapping=True, baseline_subtraction=True, render_mode=None):
         self.env = gym.make("LunarLander-v2", render_mode=render_mode)
         self.render_mode = render_mode
         self.state_dim = self.env.observation_space.shape[0]
-        self.max_episodes = 3001
+        self.max_episodes = episodes
         self.gamma = 0.99
         self.actor_lr = 0.0001
         self.critic_lr = 0.0005
-        self.n_step = steps
+        self.n_step = 5
 
         self.bootstrapping = bootstrapping
         self.baseline_subtraction = baseline_subtraction
@@ -67,29 +67,17 @@ class ActorCritic():
 
         self.rewards = []
     
-    def learn(self):
-        for episode in range(self.max_episodes):
-            state, info = self.env.reset()
-            ep_reward = 0
+    def learn(self, episodes):
+        if episodes:
+            max_episodes = episodes
+        else:
+            max_episodes = self.max_episodes
+        for episode in range(max_episodes):
             log_probs = []
             values = []
             rewards = []
-            terminated = truncated = False
 
-            while not (terminated or truncated):
-                state_tensor = torch.from_numpy(state).unsqueeze(0).to(self.device)
-                action_probs = self.actor_model(state_tensor)
-                value = self.critic_model(state_tensor)
-                m = Categorical(action_probs)
-                action = m.sample()
-                log_prob = m.log_prob(action)
-                next_state, reward, terminated, truncated, info = self.env.step(action.item())
-                ep_reward += reward
-
-                log_probs.append(log_prob)
-                values.append(value)
-                rewards.append(reward)
-                state = next_state
+            ep_reward = self.episode(log_probs, values, rewards)
 
             self.rewards.append(ep_reward)
 
@@ -126,18 +114,57 @@ class ActorCritic():
             self.actor_optimizer.step()
             self.critic_optimizer.step()
 
-            if episode % 1000 == 0 or self.render_mode == 'human':
+            if episode % 100 == 0 or self.render_mode == 'human':
                 print(f"Episode: {episode}, Total Reward: {ep_reward}, Average: {np.mean(self.rewards[-100:])}")
 
         return self.rewards
+
+    def episode(self, log_probs, values, rewards, deterministic=False):
+        state, info = self.env.reset()
+        ep_reward = 0
+        terminated = truncated = False
+
+        while not (terminated or truncated):
+            state_tensor = torch.from_numpy(state).unsqueeze(0).to(self.device)
+            if deterministic:
+                # TODO: maken
+                action = self.actor_model.forward(state_tensor) # TODO: causes error because this gives a tensor
+                value = self.critic_model.forward(state_tensor)
+                log_prob = 0
+            else:
+                action_probs = self.actor_model(state_tensor)
+                value = self.critic_model(state_tensor)
+                m = Categorical(action_probs)
+                action = m.sample()
+                log_prob = m.log_prob(action)
+            next_state, reward, terminated, truncated, info = self.env.step(action.item())
+            ep_reward += reward
+
+            log_probs.append(log_prob)
+            values.append(value)
+            rewards.append(reward)
+            state = next_state
+        return ep_reward
+
+def experiment(nrEpisodes, interval, nrTestEpisodes):
+    ac = ActorCritic()
+    rewards = []
+    # per iteration, we perform `interval` episodes, so divide nrEpisodes by interval
+    for i in range(nrEpisodes // interval):
+        # first perform `interval` episodes of learning
+        ac.learn(episodes=interval)
+        # then perform `nrTestEpisodes` test episodes deterministically to get results for this nr of episodes
+        avg = 0
+        for _ in range(nrTestEpisodes):
+            avg += ac.episode([], [], [], deterministic=True)
+        rewards.append(avg / nrTestEpisodes)
+        # and then repeat, 
+    return rewards
 
 if __name__ == "__main__":
     if 0:
         ac = ActorCritic("human")
     else:
-        for i in range(1, 10):
-            print("steps:", i)
-            ac = ActorCritic(steps=i)
-            ac.learn()
+        ac = ActorCritic()
     rewards = ac.learn()
     np.save("ac.npy", rewards)
