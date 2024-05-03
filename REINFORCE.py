@@ -45,8 +45,8 @@ class Policy_Net(nn.Module):
         #self.layer2 = nn.Linear(128, 128)
         #self.layer3 = nn.Linear(128, 4)
 
-        self.saved_log_probs = []
-        self.rewards = []
+        #self.saved_log_probs = []
+        #self.rewards = []
 
     def forward(self, x):
         x = self.layer1(x)
@@ -65,6 +65,7 @@ class REINFORCE():
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         self.max_episodes = 1000
         self.gamma = 0.99
+        self.epsilon = 0.01
         self.LearningRate = 0.01
         self.PolicyNet = Policy_Net()
         self.optimizer = optim.Adam(self.PolicyNet.parameters(), lr=self.LearningRate)
@@ -81,7 +82,7 @@ class REINFORCE():
         m = Categorical(probs)
         action = m.sample()
         log_prob = m.log_prob(action)
-        self.PolicyNet.saved_log_probs.append(m.log_prob(action))
+        #self.PolicyNet.saved_log_probs.append(m.log_prob(action))
         return action.item(), log_prob, entropy
         
     def select_action_tomke(self, state):
@@ -94,7 +95,7 @@ class REINFORCE():
         action = np.random.choice(np.arange(4), p=cpu_action_probs)
         log_prob = log_prob[action]
         return action, log_prob, entropy
-    
+    '''
     def finish_episode(self):
         R = 0
         policy_loss = []
@@ -113,80 +114,42 @@ class REINFORCE():
         self.optimizer.step()
         del self.PolicyNet.rewards[:]
         del self.PolicyNet.saved_log_probs[:]
-        
+    '''   
     def Reinforce_Learn(self):
-        self.env.reset(seed=543)
-        torch.manual_seed(543)
         for m in range(self.max_episodes):
             state, info = self.env.reset()
             totalreward = 0
-            #state_t = []
-            #action_t = []
             reward_t = []
             log_probs = []
             entropies = []
-            #terminated, truncated = [False, False]
+            terminated, truncated = [False, False]
             print("ep", m)
-            #grad = 0
-            for t in range(1, 1000):#while not (terminated or truncated):
+            while not (terminated or truncated):#for t in range(1, 1000):#
                 action, log_prob, entropy = self.select_action(state)
-                #sample trace h_0{s_0,a_0,r_0,s_1,...,s_n+1} according to policy pi(a|s)
-                #breakpoint()
                 state, reward, terminated, truncated, info = self.env.step(action)
-                #print("rsg", terminated, truncated)
-                #print("tr", totalreward)
                 reward_t.append(reward)
-                self.PolicyNet.rewards.append(reward)
                 totalreward += reward
                 log_probs.append(log_prob)
                 entropies.append(entropy)
-                #action_t.append(action)
-                
-                #state_t.append(torch.from_numpy(state).float().unsqueeze(0))
-                #print(reward_t)
-                
-                #state = next_state
                 if (terminated or truncated):
                     self.totalrewards.append(totalreward)
                     break
-            '''
-            R = torch.zeros(1)
+            
+            R = 0
             grad = []
+            returns = deque()
             for t in reversed(range(len(reward_t))):
                 R = reward_t[t] + self.gamma * R
-                #unit_ = torch.zeros(4).to(torch.float64)
-                #unit_[action_t[t]] = 1
-                grad.append(-log_probs[t]*R)#torch.dot(log_probs[t],unit_)*R
-                #grad = grad + (log_probs[t]*(Variable(R).expand_as(log_probs[t]))).sum()# - (self.LearningRate*entropies[t]).sum()
-            #grad = grad / len(reward_t)
-            self.optimizer.zero_grad()
-            
-            grad = torch.cat(grad).sum()
-            grad.backward() # compute the gradients
-            #torch.nn.utils.clip_grad_value_(self.PolicyNet.parameters(), 40) # clip gradients to avoid exploding gradients
-            self.optimizer.step()
-            '''
-            R = 0
-            policy_loss = []
-            returns = deque()
-            for r in self.PolicyNet.rewards[::-1]:
-                R = r + self.gamma * R
                 returns.appendleft(R)
             returns = torch.tensor(returns)
-            returns = (returns - returns.mean()) / (returns.std() + self.eps)
-            for log_prob, R, entropy in zip(self.PolicyNet.saved_log_probs, returns, entropies):
-                #print(log_prob)
-                policy_loss.append((-log_prob * R))#-(self.LearningRate*entropy))
+            returns = (returns - returns.mean()) / (returns.std())# + self.eps)
+            print(self.LearningRate)
+            for log_prob, R, entropy in zip(log_probs, returns, entropies):
+                grad.append((-log_prob * R)-(self.epsilon*entropy))
             self.optimizer.zero_grad()
-            policy_loss = torch.cat(policy_loss).sum()
-            policy_loss.backward()
+            grad = torch.cat(grad).sum()
+            grad.backward()
             self.optimizer.step()
-            del self.PolicyNet.rewards[:]
-            del self.PolicyNet.saved_log_probs[:]
-            #if(m%25 == 0):
-            #    self.env.render()
-            #if m % 10 == 0:
-                # play an episode based on your current policy, track the return
         return self.totalrewards
 
 
