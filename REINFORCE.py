@@ -77,12 +77,12 @@ class REINFORCE():
         state = torch.from_numpy(state).float().unsqueeze(0)
         probs = self.PolicyNet(state)
         #print(probs)
-        #entropy = (- probs * torch.log(probs)).sum()
+        entropy = (- probs * torch.log(probs)).sum()
         m = Categorical(probs)
         action = m.sample()
-        #log_prob = m.log_prob(action)
+        log_prob = m.log_prob(action)
         self.PolicyNet.saved_log_probs.append(m.log_prob(action))
-        return action.item()#, log_prob, entropy
+        return action.item(), log_prob, entropy
         
     def select_action_tomke(self, state):
         state = torch.from_numpy(state).unsqueeze(0)
@@ -122,25 +122,24 @@ class REINFORCE():
             totalreward = 0
             #state_t = []
             #action_t = []
-            #reward_t = []
-            #log_probs = []
-            #entropies = []
+            reward_t = []
+            log_probs = []
+            entropies = []
             #terminated, truncated = [False, False]
             print("ep", m)
             #grad = 0
             for t in range(1, 1000):#while not (terminated or truncated):
-                action = self.select_action(state)#, log_prob, entropy = self.select_action(state)
+                action, log_prob, entropy = self.select_action(state)
                 #sample trace h_0{s_0,a_0,r_0,s_1,...,s_n+1} according to policy pi(a|s)
                 #breakpoint()
-                #state_t.append(torch.from_numpy(state).float().unsqueeze(0))
                 state, reward, terminated, truncated, info = self.env.step(action)
                 #print("rsg", terminated, truncated)
                 #print("tr", totalreward)
-                #reward_t.append(reward)
+                reward_t.append(reward)
                 self.PolicyNet.rewards.append(reward)
                 totalreward += reward
-                #log_probs.append(log_prob)
-                #entropies.append(entropy)
+                log_probs.append(log_prob)
+                entropies.append(entropy)
                 #action_t.append(action)
                 
                 #state_t.append(torch.from_numpy(state).float().unsqueeze(0))
@@ -167,7 +166,23 @@ class REINFORCE():
             #torch.nn.utils.clip_grad_value_(self.PolicyNet.parameters(), 40) # clip gradients to avoid exploding gradients
             self.optimizer.step()
             '''
-            self.finish_episode()
+            R = 0
+            policy_loss = []
+            returns = deque()
+            for r in self.PolicyNet.rewards[::-1]:
+                R = r + self.gamma * R
+                returns.appendleft(R)
+            returns = torch.tensor(returns)
+            returns = (returns - returns.mean()) / (returns.std() + self.eps)
+            for log_prob, R, entropy in zip(self.PolicyNet.saved_log_probs, returns, entropies):
+                #print(log_prob)
+                policy_loss.append((-log_prob * R))#-(self.LearningRate*entropy))
+            self.optimizer.zero_grad()
+            policy_loss = torch.cat(policy_loss).sum()
+            policy_loss.backward()
+            self.optimizer.step()
+            del self.PolicyNet.rewards[:]
+            del self.PolicyNet.saved_log_probs[:]
             #if(m%25 == 0):
             #    self.env.render()
             #if m % 10 == 0:
