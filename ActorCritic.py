@@ -84,7 +84,7 @@ class ActorCritic():
             returns = []
             if self.bootstrapping:
                 n_return = 0
-                for i in range(len(rewards)-1, -1, -1):
+                for i in range(len(values)-1, -1, -1):
                     r = values[i] # reward from the critic network
                     for j in range(self.n_step):
                         if i + j < len(rewards):
