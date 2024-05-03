@@ -67,7 +67,7 @@ class ActorCritic():
 
         self.rewards = []
     
-    def learn(self, episodes):
+    def learn(self, episodes=None):
         if episodes:
             max_episodes = episodes
         else:
@@ -163,6 +163,6 @@ if __name__ == "__main__":
     if 0:
         ac = ActorCritic("human")
     else:
-        ac = ActorCritic(n_steps=i)
+        ac = ActorCritic()
     rewards = ac.learn()
     np.save("ac.npy", rewards)
