@@ -65,6 +65,7 @@ class REINFORCE():
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         self.max_episodes = 1000
         self.gamma = 0.99
+        self.epsilon = 0.01
         self.LearningRate = 0.01
         self.PolicyNet = Policy_Net()
         self.optimizer = optim.Adam(self.PolicyNet.parameters(), lr=self.LearningRate)
@@ -142,8 +143,9 @@ class REINFORCE():
                 returns.appendleft(R)
             returns = torch.tensor(returns)
             returns = (returns - returns.mean()) / (returns.std())# + self.eps)
+            print(self.LearningRate)
             for log_prob, R, entropy in zip(log_probs, returns, entropies):
-                grad.append((-log_prob * R)-(self.LearningRate*entropy))
+                grad.append((-log_prob * R)-(self.epsilon*entropy))
             self.optimizer.zero_grad()
             grad = torch.cat(grad).sum()
             grad.backward()
