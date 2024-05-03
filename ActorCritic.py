@@ -24,7 +24,7 @@ class ActorNet(nn.Module):
         super(ActorNet, self).__init__()
         self.actor = nn.Sequential(
             nn.Linear(state_dim, 128),
-            nn.Dropout(0.40),
+            nn.Dropout(0.10),
             nn.PReLU(),
             nn.Linear(128, 4)
         )
@@ -37,7 +37,7 @@ class CriticNet(nn.Module):
         super(CriticNet, self).__init__()
         self.critic = nn.Sequential(
             nn.Linear(state_dim, 128),
-            nn.Dropout(0.40),
+            nn.Dropout(0.10),
             nn.PReLU(),
             nn.Linear(128, 1)
         )
@@ -104,15 +104,14 @@ class ActorCritic():
 
             # compute actor and critic losses
             actor_loss = -(log_probs * (returns - values.detach())).sum()
+            self.actor_optimizer.zero_grad()
             actor_loss.backward()
+
             critic_loss = nn.functional.mse_loss(values, returns)
+            self.critic_optimizer.zero_grad()
             critic_loss.backward()
-            # total_loss = actor_loss + critic_loss
 
             # Optimize
-            self.actor_optimizer.zero_grad()
-            self.critic_optimizer.zero_grad()
-            # total_loss.backward()
             self.actor_optimizer.step()
             self.critic_optimizer.step()
 
