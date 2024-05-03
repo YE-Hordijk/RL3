@@ -32,7 +32,7 @@ def RunExperiment(ALGO, nameResults="testResults", repetition_count=20, params=N
 #*******************************************************************************
 
 
-params = {'nrEpisodes': 100,
+params = {'nrEpisodes': 1000,
 		  'interval': 10,
 		  'nrTestEpisodes': 5,
 		 }
