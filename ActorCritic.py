@@ -127,8 +127,7 @@ class ActorCritic():
         while not (terminated or truncated):
             state_tensor = torch.from_numpy(state).unsqueeze(0).to(self.device)
             if deterministic:
-                # TODO: maken
-                action = self.actor_model.forward(state_tensor) # TODO: causes error because this gives a tensor
+                action = torch.argmax(self.actor_model.forward(state_tensor))
                 value = self.critic_model.forward(state_tensor)
                 log_prob = 0
             else:
