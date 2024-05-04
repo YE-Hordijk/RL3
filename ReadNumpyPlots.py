@@ -42,7 +42,7 @@ averages = []
 labels = []
 stdevs = []
 
-for i in ['testFile_AC', 'testFile_RF']:
+for i in ['rf_p_0.01_0.01', 'rf_p_0.01_0.1', 'rf_p_0.01_0.3','rf_p_0.001_0.01', 'rf_p_0.001_0.1', 'rf_p_0.001_0.3','rf_p_0.0001_0.01', 'rf_p_0.0001_0.1', 'rf_p_0.0001_0.3',]:
     averages.append( np.load(f'{i}.npy')[0] )
     labels.append(f'{i}')
     stdevs.append(np.load(f'{i}.npy')[1])
