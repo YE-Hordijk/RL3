@@ -39,7 +39,7 @@ class Policy_Net(nn.Module):
     def __init__(self):
         super(Policy_Net, self).__init__()
         self.layer1 = nn.Linear(8, 128)
-        self.dropout = nn.Dropout(p=0.6)
+        self.dropout = nn.Dropout(p=0.4)
         self.layer2 = nn.Linear(128, 4)
         #self.layer1 = nn.Linear(8, 128)
         #self.layer2 = nn.Linear(128, 128)
@@ -61,9 +61,9 @@ class Policy_Net(nn.Module):
         #return x
         
 class REINFORCE():
-    def __init__(self):
+    def __init__(self, LearningRate=0.01, epsilon = 0.01):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
-        self.max_episodes = 1000
+        self.max_episodes = 500
         self.gamma = 0.99
         self.epsilon = 0.01
         self.LearningRate = 0.01
@@ -78,11 +78,12 @@ class REINFORCE():
         state = torch.from_numpy(state).float().unsqueeze(0)
         probs = self.PolicyNet(state)
         #print(probs)
+        if torch.isnan(probs).any():
+            probs = torch.tensor([0.25, 0.25, 0.25, 0.25])
         entropy = (- probs * torch.log(probs)).sum()
         m = Categorical(probs)
         action = m.sample()
         log_prob = m.log_prob(action)
-        #self.PolicyNet.saved_log_probs.append(m.log_prob(action))
         return action.item(), log_prob, entropy
         
     def select_action_tomke(self, state):
@@ -95,35 +96,24 @@ class REINFORCE():
         action = np.random.choice(np.arange(4), p=cpu_action_probs)
         log_prob = log_prob[action]
         return action, log_prob, entropy
-    '''
-    def finish_episode(self):
-        R = 0
-        policy_loss = []
-        returns = deque()
-        for r in self.PolicyNet.rewards[::-1]:
-            R = r + self.gamma * R
-            returns.appendleft(R)
-        returns = torch.tensor(returns)
-        returns = (returns - returns.mean()) / (returns.std() + self.eps)
-        for log_prob, R in zip(self.PolicyNet.saved_log_probs, returns):#, entropies):
-            #print(log_prob)
-            policy_loss.append(-log_prob * R)#-(self.LearningRate*entropy))
-        self.optimizer.zero_grad()
-        policy_loss = torch.cat(policy_loss).sum()
-        policy_loss.backward()
-        self.optimizer.step()
-        del self.PolicyNet.rewards[:]
-        del self.PolicyNet.saved_log_probs[:]
-    '''   
-    def Reinforce_Learn(self):
-        for m in range(self.max_episodes):
-            state, info = self.env.reset()
-            totalreward = 0
+        
+        
+    def Reinforce_Learn(self, episodes=None):
+        if episodes:
+            max_episodes = episodes
+        else:
+            max_episodes = self.max_episodes
+        for m in range(max_episodes):
+            #state, info = self.env.reset()
+            #totalreward = 0
             reward_t = []
             log_probs = []
             entropies = []
-            terminated, truncated = [False, False]
+            #terminated, truncated = [False, False]
             print("ep", m)
+            totalreward = self.episode(reward_t, log_probs, entropies)
+            self.totalrewards.append(totalreward)
+            '''
             while not (terminated or truncated):#for t in range(1, 1000):#
                 action, log_prob, entropy = self.select_action(state)
                 state, reward, terminated, truncated, info = self.env.step(action)
@@ -134,7 +124,7 @@ class REINFORCE():
                 if (terminated or truncated):
                     self.totalrewards.append(totalreward)
                     break
-            
+            '''
             R = 0
             grad = []
             returns = deque()
@@ -143,7 +133,6 @@ class REINFORCE():
                 returns.appendleft(R)
             returns = torch.tensor(returns)
             returns = (returns - returns.mean()) / (returns.std())# + self.eps)
-            print(self.LearningRate)
             for log_prob, R, entropy in zip(log_probs, returns, entropies):
                 grad.append((-log_prob * R)-(self.epsilon*entropy))
             self.optimizer.zero_grad()
@@ -152,9 +141,55 @@ class REINFORCE():
             self.optimizer.step()
         return self.totalrewards
 
+    def episode(self, reward_t, log_probs, entropies, deterministic=False):
+        state, info = self.env.reset()
+        totalreward = 0
+        terminated, truncated = [False, False]
+        while not (terminated or truncated):#for t in range(1, 1000):#
+            action, log_prob, entropy = self.select_action(state)
+            state, reward, terminated, truncated, info = self.env.step(action)
+            reward_t.append(reward)
+            totalreward += reward
+            log_probs.append(log_prob)
+            entropies.append(entropy)
+        return totalreward
 
+def experiment(nrEpisodes, interval, nrTestEpisodes):
+    r = REINFORCE()
+    rewards = []
+    # per iteration, we perform `interval` episodes, so divide nrEpisodes by interval
+    for i in range(nrEpisodes // interval):
+        # first perform `interval` episodes of learning
+        r.Reinforce_Learn(episodes=interval)
+        # then perform `nrTestEpisodes` test episodes deterministically to get results for this nr of episodes
+        avg = 0
+        for _ in range(nrTestEpisodes):
+            avg += r.episode([], [], [], deterministic=True)
+        rewards.append(avg / nrTestEpisodes)
+        print((i+1)*interval, '=', avg/nrTestEpisodes)
+        # and then repeat
+    return rewards
+    
+def parameters(nrEpisodes, interval, nrTestEpisodes, LearningRate, epsilon):
+    r = REINFORCE(LearningRate, epsilon)
+    rewards = []
+    # per iteration, we perform `interval` episodes, so divide nrEpisodes by interval
+    for i in range(nrEpisodes // interval):
+        # first perform `interval` episodes of learning
+        r.Reinforce_Learn(episodes=interval)
+        # then perform `nrTestEpisodes` test episodes deterministically to get results for this nr of episodes
+        avg = 0
+        for _ in range(nrTestEpisodes):
+            avg += r.episode([], [], [], deterministic=True)
+        rewards.append(avg / nrTestEpisodes)
+        print((i+1)*interval, '=', avg/nrTestEpisodes)
+        # and then repeat
+    return rewards
 
-
-#r = REINFORCE() # initialize the models
-#policy = r.Reinforce_Learn()
-#print("end", policy)
+if __name__ == "__main__":
+    if 0:
+        r = REINFORCE("human")
+    else:
+        r = REINFORCE()
+    rewards = r.Reinforce_Learn()
+    np.save("reinforce.npy", rewards)
