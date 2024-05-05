@@ -68,49 +68,16 @@ class CriticNet(nn.Module):
         return self.critic(state)
 
 #*******************************************************************************
-"""
-class Actor_Net(nn.Module): # Policy network
-    def __init__(self):
-        super(Actor_Net, self).__init__()
-        self.layer1 = nn.Linear(8, 128)
-        self.dropout = nn.Dropout(p=0.6)
-        self.layer2 = nn.Linear(128, 4)
-        self.prelu = nn.PReLU()
-        #self.layer1 = nn.Linear(8, 128)
-        #self.layer2 = nn.Linear(128, 128)
-        #self.layer3 = nn.Linear(128, 4)
-
-        #self.saved_log_probs = []
-        #self.rewards = []
-
-    def forward(self, x):
-        x = self.layer1(x)
-        x = self.dropout(x)
-        x = self.prelu(x) # XXX instead of F.relu(x)
-        action_scores = self.layer2(x)
-        return F.softmax(action_scores, dim=1)
-        #x = F.relu(self.layer1(x))
-        #x = F.relu(self.layer2(x))
-        #x = self.layer3(x)
-        #x = F.softmax(x, dim=1)#.to(torch.float64)
-        #return x
-"""
-#*******************************************************************************
 
 class ActorCritic():
-    def __init__(self, bootstrapping=True, baseline_subtraction=True, render_mode=None, epsilon = 0.01):
+    def __init__(self, bootstrapping=False, baseline_subtraction=True, render_mode=None, epsilon = 0.01):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         #self.env = gym.make("CartPole-v1")
-        self.max_episodes = 1000
+        self.max_episodes = 800
         self.gamma = 0.99
-        #self.epsilon = 0.01
-        #self.LearningRate = 0.01
         self.actor_lr = 0.005
         self.critic_lr = 0.05
 
-        #self.eps = np.finfo(np.float32).eps.item()
-        #self.losses = []
-        
         self.bootstrapping = bootstrapping
         self.baseline_subtraction = baseline_subtraction
         
@@ -127,8 +94,6 @@ class ActorCritic():
 
     def select_action(self, state_tensor):
         probs = self.actor_model(state_tensor) # Put state through network and get action probabilities
-        #print(probs)
-        #print(f"type probs: {probs.type()}")
         if torch.isnan(probs).any(): # Check for NaN values in the probabilities
             print(f"\033[41X\033[0m", end="")
             probs = torch.tensor([0.25, 0.25, 0.25, 0.25], requires_grad=True)
