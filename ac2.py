@@ -132,8 +132,10 @@ class ActorCritic():
             values = torch.cat(values).squeeze(-1) # XXX Maybe remove the -1
 
             # Determine advantages
-            if self.baseline_subtraction: advantages = returns - values.detach()
-            else: advantages = returns
+            if self.baseline_subtraction:
+                advantages = returns - values.detach()
+            else:
+                advantages = returns
             advantages = (advantages - advantages.mean()) / advantages.std() # Normalize
 
 
@@ -237,13 +239,32 @@ def playout(algo, repeats=20):
 
 #*******************************************************************************
 
+def ablation():
+    # bootstrapping=False, baseline_subtraction=True
+    for i in range(4):
+        bootstrap = i % 2 == 0
+        baseline = i // 2 == 0
+        filename = "ac_ablation"+("_boot" if bootstrap else "")+("_base" if baseline else "")+".npy"
+        print("run will be saved to", filename)
+        results = []
+        for i in range(5):
+            results.append(experiment(800, 10, 5, {"bootstrapping":bootstrap, "baseline_subtraction":baseline}))
+        avg = np.mean(results, axis=0)
+        std = np.std(results, axis=0)
+        np.save(filename, np.vstack((avg, std)))
+
+#*******************************************************************************
+
 if __name__ == "__main__":
-    nstep = [3, 5, 7, 10]
-    avg_rewards = []
-    playouts = np.zeros(20) # playout 20 times
-    for a in nstep:
-        print("lr:", a)
-        rewards = experiment(800, 10, 5, {"n_step": a}, playouts)
-        np.save(f"ac_nstep_{a}.npy", rewards)
-        print("\a")
-        print(playouts)
+    if 1:
+        ablation()
+    else:
+        nstep = [3, 5, 7, 10]
+        avg_rewards = []
+        playouts = np.zeros(20) # playout 20 times
+        for a in nstep:
+            print("lr:", a)
+            rewards = experiment(800, 10, 5, {"n_step": a}, playouts)
+            np.save(f"ac_nstep_{a}.npy", rewards)
+            print("\a")
+            print(playouts)
