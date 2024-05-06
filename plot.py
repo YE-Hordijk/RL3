@@ -2,31 +2,50 @@ import numpy as np
 from scipy.signal import savgol_filter
 from matplotlib import pyplot as plt
 
-interval = 10
-reinforce = np.load(f"rf_{str(interval)}.npy")
-ac = np.load(f"ac_{str(interval)}.npy")
-
-# reinforce = [np.load(f"reinforce{i}.npy") for i in range(10)]
-# ac = [np.load(f"ac{i}.npy") for i in range(10)]
-plt.rcParams.update({'font.size': 22})
-
-
-r_avg = savgol_filter(reinforce[0], 3, 1)
-r_std = reinforce[1]
-ac_avg = savgol_filter(ac[0], 3, 1)
-ac_std = ac[1]
-
-# interval = params['interval']
 def timesteps(arr, interval):
     return range(0, len(arr) * interval, interval)
 
+interval = 10
+plot = 'x'
+while plot not in 'yn':
+    plot = input("Do you want to REINFORCE vs AC [Y], or something different [n]:").lower()
+if plot == 'n':
+    data = []
+    labels = []
+    while name := input("Filename:"):
+        data.append(np.load(name))
+        labels.append(input("Plot label for " + name + ":"))
+else:
+    data = [
+            np.load(f"rf_{str(interval)}.npy"),
+            np.load(f"ac_{str(interval)}.npy")
+    ]
+    labels = [
+            "REINFORCE reward",
+            "Actor Critic reward"
+    ]
+
+plt.rcParams.update({'font.size': 22})
 plt.figure(1, figsize=(10,7))
-plt.plot(timesteps(r_avg, interval), r_avg, color="#FF0000", label="REINFORCE reward")
-plt.plot(timesteps(ac_avg, interval), ac_avg, color="#0000FF", label="Actor Critic reward")
-plt.fill_between(timesteps(r_avg, interval), r_avg+r_std, r_avg-r_std, color="#FF000050")
-plt.fill_between(timesteps(ac_avg, interval), ac_avg+ac_std, ac_avg-ac_std, color="#0000FF50")
+
+if plot == 'n':
+    for i in range(len(data)):
+        data[i] = savgol_filter(data[i], 3, 1)
+    for i in range(len(data)):
+        plt.plot(range(len(data[i])), data[i], label=labels[i])
+else:
+    data[0][0] = savgol_filter(data[0][0], 3, 1)
+    data[1][0] = savgol_filter(data[1][0], 3, 1)
+    plt.plot(timesteps(data[0][0], interval), data[0][0], color="#FF0000", label=labels[0])
+    plt.plot(timesteps(data[1][0], interval), data[1][0], color="#0000FF", label=labels[1])
+    plt.fill_between(timesteps(data[0][0], interval), data[0][0]+data[0][1], data[0][0]-data[0][1], color="#FF000050")
+    plt.fill_between(timesteps(data[1][0], interval), data[1][0]+data[1][1], data[1][0]-data[1][1], color="#0000FF50")
+
 plt.legend()
-plt.xlabel("Timesteps")
+plt.title(input("Plot title:"))
+plt.xlabel("Episodes")
 plt.ylabel("Mean reward")
-plt.savefig('rewards.png')
+saveas = input("Save as (leave empty to not save):")
+if saveas:
+    plt.savefig(saveas)
 plt.show()

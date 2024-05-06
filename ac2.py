@@ -1,20 +1,5 @@
 # New version of Actor Critic based on the 4-5-2024 version of REINFORCE
 
-# Jace
-'''
-def Reinforce_Learn(pi, theta, eta):
-    initialize theta
-    while not converged:
-        grad = 0
-        for m in range(M)
-            sample trace h_0{s_0,a_0,r_0,s_1,...,s_n+1} according to policy pi(a|s)
-            R = 0
-            for t in reversed(range(n))
-                R = r_t + self.gamma * R
-                grad += R* rho log pi(a_t|s_t)
-        theta <- theta + eta * grad
-    return pi
-'''
 import gymnasium as gym
 import math
 import random
@@ -43,7 +28,7 @@ class ActorNet(nn.Module): # Policy network
         
         self.actor = nn.Sequential(
             nn.Linear(8, 128), 
-            nn.Dropout(p=0.2), 
+            nn.Dropout(p=0.3), 
             nn.PReLU(), 
             nn.Linear(128, 4),
             nn.Softmax(dim=-1)
@@ -70,13 +55,12 @@ class CriticNet(nn.Module):
 #*******************************************************************************
 
 class ActorCritic():
-    def __init__(self, bootstrapping=False, baseline_subtraction=True, render_mode=None, epsilon = 0.01):
+    def __init__(self, bootstrapping=False, baseline_subtraction=True, render_mode=None, actor_lr=0.005, critic_lr=0.05):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
-        #self.env = gym.make("CartPole-v1")
         self.max_episodes = 800
         self.gamma = 0.99
-        self.actor_lr = 0.005
-        self.critic_lr = 0.05
+        self.actor_lr = actor_lr
+        self.critic_lr = critic_lr
 
         self.bootstrapping = bootstrapping
         self.baseline_subtraction = baseline_subtraction
@@ -158,13 +142,10 @@ class ActorCritic():
             critic_loss = nn.functional.mse_loss(values, returns) # F.smooth_l1_loss(returns, values).sum()
             #critic_loss = F.smooth_l1_loss(returns, values).sum()
 
-
             # Cast critic_loss to right datatype https://discuss.pytorch.org/t/backward-does-not-work/168732
             critic_loss = torch.tensor([critic_loss.item()]).to(dtype = torch.float32).requires_grad_(True)
 
-
-
-
+            # From here it's standard procedure
             # Set the gradients to zero
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
@@ -182,8 +163,6 @@ class ActorCritic():
             self.actor_optimizer.step()
             self.critic_optimizer.step()
 
-
-
             if episode > 100 and (episode % 10 == 0 or self.render_mode == 'human'):
                 print(f"Episode: {episode}, Total Reward: {ep_total_reward}, Average: {np.mean(total_rewards[-100:])}")
 
@@ -191,7 +170,7 @@ class ActorCritic():
 
     #===========================================================================
 
-    def episode(self, rewards, log_probs, entropies, values, deterministic=False):
+    def episode(self, rewards, log_probs, entropies, values):
         state, info = self.env.reset() # Reset the environment
         ep_total_reward = 0 # The cumulative reward within this episode
         terminated = truncated = False # Set termination criteria
@@ -217,68 +196,54 @@ class ActorCritic():
 
 #*******************************************************************************
 
-def experiment(nrEpisodes, interval, nrTestEpisodes):
-    r = ActorCritic()
+def experiment(nrEpisodes, interval, nrTestEpisodes, params=[], playouts=[]):
+    ac = ActorCritic(*params)
+    print("params:", params)
     rewards = []
     # per iteration, we perform `interval` episodes, so divide nrEpisodes by interval
     for i in range(nrEpisodes // interval):
         # first perform `interval` episodes of learning
-        r.Reinforce_Learn(episodes=interval)
-        # then perform `nrTestEpisodes` test episodes deterministically to get results for this nr of episodes
+        ac.learn(episodes=interval)
+        # Then perform some tests without backpropagating
         avg = 0
         for _ in range(nrTestEpisodes):
-            avg += r.episode([], [], [], deterministic=True)
+            avg += ac.episode([], [], [], [])
         rewards.append(avg / nrTestEpisodes)
         print((i+1)*interval, '=', avg/nrTestEpisodes)
         # and then repeat
+
+    for i in range(len(playouts)):
+        playouts[i] = playout(ac)
     return rewards
 
 #*******************************************************************************
 
-def parameters(nrEpisodes, interval, nrTestEpisodes, epsilon):
-    r = ActorCritic(epsilon)
-    rewards = []
-    # per iteration, we perform `interval` episodes, so divide nrEpisodes by interval
-    for i in range(nrEpisodes // interval):
-        # first perform `interval` episodes of learning
-        r.learn(episodes=interval)
-        # then perform `nrTestEpisodes` test episodes deterministically to get results for this nr of episodes
-        avg = 0
-        for _ in range(nrTestEpisodes):
-            avg += r.episode([], [], [], deterministic=True)
-        rewards.append(avg / nrTestEpisodes)
-        print((i+1)*interval, '=', avg/nrTestEpisodes)
-        # and then repeat
-    return rewards
-
-#*******************************************************************************
-
-def playout(algo):
-    env = gym.make("LunarLander-v2", render_mode="human")
+def playout(algo, repeats=20):
+    env = gym.make("LunarLander-v2")#, render_mode="human")
     state, info = env.reset(seed=42)
     model = algo.actor_model
-    for _ in range(20): # 20 episodes
+    rewards = []
+    for _ in range(repeats):
         state, info = env.reset()
         terminated = truncated = False
         while not (terminated or truncated):
-            #action = env.action_space.sample()  # this is where you would insert your policy
             state_tensor = torch.FloatTensor(state).unsqueeze(0)
             action, _, _ = algo.select_action(state_tensor)
             state, reward, terminated, truncated, info = env.step(action)
-
+        rewards.append(reward)
 
     env.close()
+    return np.mean(rewards)
 
 #*******************************************************************************
 
 if __name__ == "__main__":
-    r = ActorCritic() # "human"
-    rewards = r.learn()
-    np.save("ac2.npy", rewards)
-    print("\a")
-    playout(r)
-
-
-
-
-
+    actor_lr = [0.001, 0.005, 0.01]
+    avg_rewards = []
+    playouts = np.zeros(20) # playout 20 times
+    for a in actor_lr:
+        print("lr:", a)
+        rewards = experiment(800, 10, 5, {"actor_lr": a}, playouts)
+        np.save(f"ac_actor_{a}.npy", rewards)
+        print("\a")
+        print(playouts)
