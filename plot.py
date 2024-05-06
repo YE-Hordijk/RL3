@@ -5,6 +5,15 @@ from matplotlib import pyplot as plt
 def timesteps(arr, interval):
     return range(0, len(arr) * interval, interval)
 
+colors = [
+    '#FF0000',
+    '#0000FF',
+    '#00FF00',
+    '#AA00AA',
+    '#AAAA00',
+    '#00AAAA',
+]
+
 interval = 10
 plot = 'x'
 while plot not in 'yn':
@@ -12,10 +21,17 @@ while plot not in 'yn':
 if plot == 'n':
     data = []
     labels = []
+    stdev = []
+    use_stdev = 'x'
     while name := input("Filename:"):
         d = np.load(name)
         if len(d) == 2:
             data.append(d[0])
+            while use_stdev.lower() not in 'yn':
+                # will not get asked again, as the value will be saved and therefore will be in 'yn'
+                use_stdev = input("Do you want to plot standard deviation? [yn]").lower()
+            if use_stdev == 'y':
+                stdev.append(d[1])
         else:
             data.append(d)
         labels.append(input("Plot label for " + name + ":"))
@@ -36,7 +52,9 @@ if plot == 'n':
     for i in range(len(data)):
         data[i] = savgol_filter(data[i], 10, 1)
     for i in range(len(data)):
-        plt.plot(range(len(data[i])), data[i], label=labels[i])
+        plt.plot(timesteps(data[i], interval), data[i], label=labels[i], color=colors[i])
+        if use_stdev == 'y':
+            plt.fill_between(timesteps(data[i], interval), data[i]+stdev[i], data[i]-stdev[i], color=colors[i]+'50')
 else:
     data[0][0] = savgol_filter(data[0][0], 10, 1)
     data[1][0] = savgol_filter(data[1][0], 10, 1)
