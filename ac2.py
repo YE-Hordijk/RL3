@@ -44,7 +44,7 @@ class CriticNet(nn.Module):
         super(CriticNet, self).__init__()
         self.critic = nn.Sequential(
             nn.Linear(8, 128),
-            nn.Dropout(0.15),
+            nn.Dropout(0.1),
             nn.PReLU(),
             nn.Linear(128, 1)
         )
@@ -55,10 +55,10 @@ class CriticNet(nn.Module):
 #*******************************************************************************
 
 class ActorCritic():
-    def __init__(self, bootstrapping=False, baseline_subtraction=True, render_mode=None, actor_lr=0.005, critic_lr=0.05):
+    def __init__(self, bootstrapping=False, baseline_subtraction=True, render_mode=None, actor_lr=0.005, critic_lr=0.05, gamma=0.99, n_step=3):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         self.max_episodes = 800
-        self.gamma = 0.99
+        self.gamma = gamma
         self.actor_lr = actor_lr
         self.critic_lr = critic_lr
 
@@ -71,7 +71,7 @@ class ActorCritic():
         self.critic_model = CriticNet()#.to(self.device)
         self.actor_optimizer = optim.Adam(self.actor_model.parameters(), lr=self.actor_lr)
         self.critic_optimizer = optim.Adam(self.critic_model.parameters(), lr=self.critic_lr)
-        self.n_step = 5
+        self.n_step = n_step
 
 
     #===========================================================================
@@ -238,12 +238,12 @@ def playout(algo, repeats=20):
 #*******************************************************************************
 
 if __name__ == "__main__":
-    actor_lr = [0.001, 0.005, 0.01]
+    nstep = [3, 5, 7, 10]
     avg_rewards = []
     playouts = np.zeros(20) # playout 20 times
-    for a in actor_lr:
+    for a in nstep:
         print("lr:", a)
-        rewards = experiment(800, 10, 5, {"actor_lr": a}, playouts)
-        np.save(f"ac_actor_{a}.npy", rewards)
+        rewards = experiment(800, 10, 5, {"n_step": a}, playouts)
+        np.save(f"ac_nstep_{a}.npy", rewards)
         print("\a")
         print(playouts)
