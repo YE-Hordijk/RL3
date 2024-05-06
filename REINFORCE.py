@@ -49,7 +49,7 @@ class Policy_Net(nn.Module):
         return F.softmax(action_scores, dim=1)
         
 class REINFORCE():
-    def __init__(self, LearningRate=0.01, epsilon = 0.1):
+    def __init__(self, LearningRate=0.01, epsilon = 0.01):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         self.max_episodes = 1000
         self.gamma = 0.99
