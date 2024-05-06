@@ -40,15 +40,15 @@ def sort_on_pivot(averages, pivot):
 # Load the NumPy file
 averages = []
 labels = []
+label_values = [[0.01, 0.01],[0.01, 0.1],[0.01, 0.3],[0.001, 0.01],[0.001, 0.1],[0.001, 0.3],[0.0001, 0.01],[0.0001, 0.1],[0.0001, 0.3]]
 stdevs = []
-
-for i in ['rf_p_0.01_0.01', 'rf_p_0.01_0.1', 'rf_p_0.01_0.3','rf_p_0.001_0.01', 'rf_p_0.001_0.1', 'rf_p_0.001_0.3','rf_p_0.0001_0.01', 'rf_p_0.0001_0.1', 'rf_p_0.0001_0.3',]:
+for i,j in zip(['rf_p_0.01_0.01', 'rf_p_0.01_0.1', 'rf_p_0.01_0.3','rf_p_0.001_0.01', 'rf_p_0.001_0.1', 'rf_p_0.001_0.3','rf_p_0.0001_0.01', 'rf_p_0.0001_0.1', 'rf_p_0.0001_0.3',], range(9)):
     averages.append( np.load(f'{i}.npy')[0] )
-    labels.append(f'{i}')
+    labels.append(f'$\\alpha$: {label_values[j][0]}, $\epsilon$: {label_values[j][1]}')
     stdevs.append(np.load(f'{i}.npy')[1])
 
 # Plot everything
-PR.Plot_Multiple_Episode_Durations(averages, stdev_list=None, labels=labels, title='Result', path='test.png', smoothen=True)
+PR.Plot_Multiple_Episode_Durations(averages, stdev_list=None, labels=labels, path='test.png', smoothen=True)
 
 
 

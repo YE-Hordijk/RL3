@@ -62,13 +62,13 @@ params = {'nrEpisodes': 500,
 		  'nrTestEpisodes': 5,
 		 }
 #RunExperiment(RF, "rf", repetition_count=5, params=params) # Do experiments for REINFORCE
-parameters = {'nrEpisodes': [500],
+parameters = {'nrEpisodes': [1000],
 		  'interval': [10],
 		  'nrTestEpisodes': [5],
-		  'LearningRate': [0.0001, 0.001, 0.01],
-		  'epsilon': [0.01, 0.1, 0.3],
+		  'LearningRate': [0.001, 0.0025, 0.005, 0.01],
+		  'epsilon': [0.1],
 		 }
-RunParameters(RF, "rf_p", repetition_count=5, params=parameters)
+RunParameters(RF, "rf_p_new", repetition_count=5, params=parameters)
 #RunExperiment(AC, "ac", repetition_count=5, params=params) # Do experiments for Actor Critic
 
 

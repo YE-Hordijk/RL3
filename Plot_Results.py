@@ -38,9 +38,9 @@ def Plot_Episode_Durations(scores_per_episodes, stdev=None, title='Result', path
 # Plot multiple scores in one plot
 def Plot_Multiple_Episode_Durations(scores_per_episodes_list, stdev_list=None, labels=None, title='Result', path='test.png', smoothen=False):
     plt.figure(1)
-    plt.title(title)
+    #plt.title(title)
     plt.xlabel('Episodes')
-    plt.ylabel('Timesteps')
+    plt.ylabel('Reward')
     
     print(scores_per_episodes_list)
 
