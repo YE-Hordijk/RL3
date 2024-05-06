@@ -1,4 +1,3 @@
-# Johan
 '''
 def Reinforce_Learn(pi, theta, eta):
     initialize theta
@@ -63,9 +62,9 @@ class Policy_Net(nn.Module):
 class REINFORCE():
     def __init__(self, LearningRate=0.01, epsilon = 0.1):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
-        self.max_episodes = 500
+        self.max_episodes = 1000
         self.gamma = 0.99
-        self.epsilon = 0.01
+        self.epsilon = 0.1
         self.LearningRate = 0.01
         self.PolicyNet = Policy_Net()
         self.optimizer = optim.Adam(self.PolicyNet.parameters(), lr=self.LearningRate)
@@ -78,8 +77,12 @@ class REINFORCE():
         state = torch.from_numpy(state).float().unsqueeze(0)
         probs = self.PolicyNet(state)
         #print(probs)
-        if torch.isnan(probs).any():
-            probs = torch.tensor([0.25, 0.25, 0.25, 0.25])
+        if torch.isnan(probs).any(): # Check for NaN values in the probabilities
+            print(f"\033[41X\033[0m", end="")
+            probs = torch.tensor([0.25, 0.25, 0.25, 0.25], requires_grad=True)
+            softmax_tensor = F.softmax(probs, dim=0)
+            probs = softmax_tensor.view(1, -1)
+            print(probs)
         entropy = (- probs * torch.log(probs)).sum()
         m = Categorical(probs)
         action = m.sample()
