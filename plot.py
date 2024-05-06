@@ -13,7 +13,11 @@ if plot == 'n':
     data = []
     labels = []
     while name := input("Filename:"):
-        data.append(np.load(name))
+        d = np.load(name)
+        if len(d) == 2:
+            data.append(d[0])
+        else:
+            data.append(d)
         labels.append(input("Plot label for " + name + ":"))
 else:
     data = [
