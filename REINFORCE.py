@@ -61,7 +61,7 @@ class Policy_Net(nn.Module):
         #return x
         
 class REINFORCE():
-    def __init__(self, LearningRate=0.01, epsilon = 0.01):
+    def __init__(self, LearningRate=0.01, epsilon = 0.1):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         self.max_episodes = 500
         self.gamma = 0.99
