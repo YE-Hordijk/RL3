@@ -64,7 +64,6 @@ class REINFORCE():
         state = torch.from_numpy(state).float().unsqueeze(0)
         probs = self.PolicyNet(state)
         if torch.isnan(probs).any(): # Check for NaN values in the probabilities
-            print(f"\033[41X\033[0m", end="")
             probs = torch.tensor([0.25, 0.25, 0.25, 0.25], requires_grad=True)
             softmax_tensor = F.softmax(probs, dim=0)
             probs = softmax_tensor.view(1, -1)
