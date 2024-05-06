@@ -34,12 +34,12 @@ plt.figure(1, figsize=(10,7))
 
 if plot == 'n':
     for i in range(len(data)):
-        data[i] = savgol_filter(data[i], 3, 1)
+        data[i] = savgol_filter(data[i], 10, 1)
     for i in range(len(data)):
         plt.plot(range(len(data[i])), data[i], label=labels[i])
 else:
-    data[0][0] = savgol_filter(data[0][0], 3, 1)
-    data[1][0] = savgol_filter(data[1][0], 3, 1)
+    data[0][0] = savgol_filter(data[0][0], 10, 1)
+    data[1][0] = savgol_filter(data[1][0], 10, 1)
     plt.plot(timesteps(data[0][0], interval), data[0][0], color="#FF0000", label=labels[0])
     plt.plot(timesteps(data[1][0], interval), data[1][0], color="#0000FF", label=labels[1])
     plt.fill_between(timesteps(data[0][0], interval), data[0][0]+data[0][1], data[0][0]-data[0][1], color="#FF000050")
