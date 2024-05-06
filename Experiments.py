@@ -66,7 +66,7 @@ parameters = {'nrEpisodes': [500],
 		  'interval': [10],
 		  'nrTestEpisodes': [5],
 		  'LearningRate': [0.0001, 0.001, 0.01],
-		  'epsilon': [0.3],
+		  'epsilon': [0.05],
 		 }
 RunParameters(RF, "rf_p", repetition_count=5, params=parameters)
 #RunExperiment(AC, "ac", repetition_count=5, params=params) # Do experiments for Actor Critic
