@@ -52,7 +52,7 @@ if plot == 'n':
     for i in range(len(data)):
         data[i] = savgol_filter(data[i], 10, 1)
     for i in range(len(data)):
-        plt.plot(timesteps(data[i], interval), data[i], label=labels[i], color=colors[i])
+        plt.plot(timesteps(data[i], interval), data[i], label=labels[i]), color=colors[i])
         if use_stdev == 'y':
             plt.fill_between(timesteps(data[i], interval), data[i]+stdev[i], data[i]-stdev[i], color=colors[i]+'50')
 else:
