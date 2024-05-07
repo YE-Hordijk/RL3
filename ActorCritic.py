@@ -55,7 +55,7 @@ class CriticNet(nn.Module):
 #*******************************************************************************
 
 class ActorCritic():
-    def __init__(self, bootstrapping=False, baseline_subtraction=True, render_mode=None, actor_lr=0.005, critic_lr=0.05, gamma=0.99, n_step=3):
+    def __init__(self, bootstrapping=True, baseline_subtraction=True, render_mode=None, actor_lr=0.005, critic_lr=0.05, gamma=0.99, n_step=3):
         self.env = gym.make("LunarLander-v2")#, render_mode="human")
         self.max_episodes = 800
         self.gamma = gamma
@@ -67,6 +67,7 @@ class ActorCritic():
         
         self.render_mode = render_mode
         #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        h
         self.actor_model = ActorNet()#.to(self.device)
         self.critic_model = CriticNet()#.to(self.device)
         self.actor_optimizer = optim.Adam(self.actor_model.parameters(), lr=self.actor_lr)
@@ -256,15 +257,9 @@ def ablation():
 #*******************************************************************************
 
 if __name__ == "__main__":
-    if 1:
+    if 0:
         ablation()
     else:
-        nstep = [3, 5, 7, 10]
-        avg_rewards = []
-        playouts = np.zeros(20) # playout 20 times
-        for a in nstep:
-            print("lr:", a)
-            rewards = experiment(800, 10, 5, {"n_step": a}, playouts)
-            np.save(f"ac_nstep_{a}.npy", rewards)
-            print("\a")
-            print(playouts)
+        ac = ActorCritic()
+    rewards = ac.learn()
+    np.save('ac.npy', rewards)
